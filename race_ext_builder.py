@@ -212,6 +212,16 @@ def execute(args: argparse.Namespace, cmd: List[str], cwd: Optional[str] = None,
             raise Exception(f"Command {cmd} returned with non-zero exit status {proc.returncode}")
 
 
+def copy(args: argparse.Namespace, src: str, dest: str):
+    """Copy a file or directory to the given destination"""
+    logger.info(f"Copying {src} to {dest}")
+    cmd = ["cp"]
+    if os.path.isdir(src):
+        cmd.extend(["--recursive", "--preserve"])
+    cmd.extend([src, dest])
+    execute(args, cmd)
+
+
 def create_package(args: argparse.Namespace):
     """Create tarball package"""
     logger.info(f"Packaging {args.install_dir} into {args.pkg_file}")

@@ -63,3 +63,5 @@ ENV ANDROID_NDK=/opt/android/ndk/default \
     CC=clang \
     CXX=clang++ \
     PATH=${PATH}:/opt/android/cmdline-tools/tools/bin
+
+COPY race_ext_builder.py /usr/lib/python3.8/

@@ -40,6 +40,11 @@ def get_host_target() -> str:
     return "linux-x86_64" if "x86" in os.uname().machine else "linux-arm64-v8a"
 
 
+def get_host_platform() -> str:
+    """Get Docker platform corresponding to the current host"""
+    return "linux/amd64" if "x86" in os.uname().machine else "linux/arm64"
+
+
 def get_cli_arguments():
     """Parse command-line arguments to the script"""
     parser = argparse.ArgumentParser(
@@ -64,7 +69,13 @@ def get_cli_arguments():
     parser.add_argument(
         "--image",
         default="ext-builder", # TODO use ghcr.io image
-        help=f"Docker image to use for building the external project",
+        help="Docker image to use for building the external project",
+        type=str,
+    )
+    parser.add_argument(
+        "--platform",
+        default=get_host_platform(),
+        help="Platform to use for docker image",
         type=str,
     )
     parser.add_argument(
@@ -101,6 +112,8 @@ def run_build(
         f"{args.cache_dir}:/build/cache",
         "-v",
         f"{build_lib_file}:/usr/lib/python3.8/race_ext_builder.py",
+        "--platform",
+        args.platform,
     ]
     cmd.extend([
         args.image,

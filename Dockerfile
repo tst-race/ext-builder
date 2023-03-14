@@ -53,11 +53,22 @@ RUN apt-get -y update && \
         cmake=3.23.* \
         cmake-data=3.23.* \
         libclang-rt-15-dev=1:15.0* \
+        llvm-15=1:15.0* \
         make=4.2.* \
         python3=3.8.* \
         wget=1.20.* && \
     update-alternatives --install /usr/bin/clang clang /usr/bin/clang-15 1 && \
     update-alternatives --install /usr/bin/clang++ clang++ /usr/bin/clang++-15 1
+
+# Install cross-compilation packages
+ARG TARGETPLATFORM
+RUN case ${TARGETPLATFORM} in \
+        "linux/amd64") CROSS_ARCH=aarch64 ;; \
+        "linux/arm64") CROSS_ARCH=x86-64  ;; \
+    esac && \
+    apt-get -y update && \
+    apt-get install -y \
+        g++-${CROSS_ARCH}-linux-gnu=4:9.3.*
 
 ENV ANDROID_NDK=/opt/android/ndk/default \
     CC=clang \

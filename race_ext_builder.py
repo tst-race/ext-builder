@@ -168,7 +168,7 @@ def setup_logger(args: argparse.Namespace):
 
 
 def fetch_source(args: argparse.Namespace, source: Optional[str], extract: Optional[str]):
-    """Fetch (and optionally) """
+    """Fetch (and optionally extract) source archive"""
     base_filename = os.path.basename(source)
     local_filepath = os.path.join(args.source_dir, base_filename)
     if not os.path.exists(local_filepath):

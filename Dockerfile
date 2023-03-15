@@ -70,6 +70,15 @@ RUN case ${TARGETPLATFORM} in \
     apt-get install -y \
         g++-${CROSS_ARCH}-linux-gnu=4:9.3.*
 
+# Setup multiarch repositories
+RUN case ${TARGETPLATFORM} in \
+        "linux/amd64") THIS_ARCH=amd64; CROSS_ARCH=arm64 ;; \
+        "linux/arm64") THIS_ARCH=arm64; CROSS_ARCH=amd64 ;; \
+    esac && \
+    dpkg --add-architecture ${CROSS_ARCH} && \
+    sed -i -e "s/deb http/deb [arch=$THIS_ARCH] http/" /etc/apt/sources.list
+COPY docker-image/${TARGETPLATFORM}/cross-compile-sources.list /etc/apt/sources.list.d/cross-compile-sources.list
+
 ENV ANDROID_NDK=/opt/android/ndk/default \
     CC=clang \
     CXX=clang++ \

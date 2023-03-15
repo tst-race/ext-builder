@@ -25,7 +25,20 @@ from typing import Any, List, Mapping, Optional
 logger = logging.root
 
 
-def get_arg_parser(name: str, version: str, revision: int, caller: str) -> argparse.ArgumentParser:
+# Constants
+TARGET_LINUX_x86_64 = "linux-x86_64"
+TARGET_LINUX_arm64_v8a = "linux-arm64-v8a"
+TARGET_ANDROID_x86_64 = "android-x86_64"
+TARGET_ANDROID_arm64_v8a = "android-arm64-v8a"
+
+
+def get_arg_parser(
+        name: str,
+        version: str,
+        revision: int,
+        caller: str,
+        targets: Optional[List[str]] = None,
+    ) -> argparse.ArgumentParser:
     """Get command-line arguments parser pre-configured for common arguments"""
     parser = argparse.ArgumentParser(
         description=f"Build {name}",
@@ -79,7 +92,7 @@ def get_arg_parser(name: str, version: str, revision: int, caller: str) -> argpa
     )
     parser.add_argument(
         "--target",
-        choices=["linux-x86_64", "linux-arm64-v8a", "android-x86_64", "android-arm64-v8a"],
+        choices=targets or [TARGET_LINUX_x86_64, TARGET_LINUX_arm64_v8a, TARGET_ANDROID_x86_64, TARGET_ANDROID_arm64_v8a],
         help="Target to build",
         required=True,
     )
@@ -167,6 +180,12 @@ def setup_logger(args: argparse.Namespace):
     logging.root.addHandler(console_handler)
 
 
+def install_packages(args: argparse.Namespace, packages: List[str]):
+    """Install packages via apt"""
+    execute(args, ["apt-get", "update", "-y"])
+    execute(args, ["apt-get", "install", "-y"] + packages)
+
+
 def fetch_source(args: argparse.Namespace, source: Optional[str], extract: Optional[str]):
     """Fetch (and optionally extract) source archive"""
     base_filename = os.path.basename(source)
@@ -192,6 +211,44 @@ def fetch_source(args: argparse.Namespace, source: Optional[str], extract: Optio
         ])
 
 
+def create_standard_envvars(args: argparse.Namespace) -> Mapping[str, str]:
+    """Create standard environment variables for compilers based on target"""
+    env = {
+        "DESTDIR": args.install_dir,
+    }
+    if args.target == TARGET_LINUX_x86_64:
+        env.update({
+            "CC": "clang -target x86_64-linux-gnu",
+            "CXX": "clang++ -target x86_64-linux-gnu",
+        })
+    elif args.target == TARGET_LINUX_arm64_v8a:
+        env.update({
+            "CC": "clang -target aarch64-linux-gnu",
+            "CXX": "clang++ -target aarch64-linux-gnu",
+        })
+    elif args.target == TARGET_ANDROID_x86_64:
+        env.update({
+            "AR": "x86_64-linux-android-ar",
+            "AS": "x86_64-linux-android-as",
+            "CC": "x86_64-linux-android29-clang",
+            "CXX": "x86_64-linux-android29-clang++",
+            "LD": "x86_64-linux-android-ld",
+            "RANLIB": "x86_64-linux-android-ranlib",
+            "STRIP": "x86_64-linux-android-strip",
+        })
+    elif args.target == TARGET_ANDROID_arm64_v8a:
+        env.update({
+            "AR": "aarch64-linux-android-ar",
+            "AS": "aarch64-linux-android-as",
+            "CC": "aarch64-linux-android29-clang",
+            "CXX": "aarch64-linux-android29-clang++",
+            "LD": "aarch64-linux-android-ld",
+            "RANLIB": "aarch64-linux-android-ranlib",
+            "STRIP": "aarch64-linux-android-strip",
+        })
+    return env
+
+
 def execute(args: argparse.Namespace, cmd: List[str], cwd: Optional[str] = None, env: Optional[Mapping[str, Any]] = None):
     """Execute command"""
     # Normalize command array
@@ -199,7 +256,7 @@ def execute(args: argparse.Namespace, cmd: List[str], cwd: Optional[str] = None,
     # If env vars were provided, add them to execution environment
     cmd_env = None
     if env:
-        cmd_env = {k: v for (k,v) in os.environ}
+        cmd_env = {k: v for (k,v) in os.environ.items()}
         cmd_env.update(env)
 
     logger.debug(f"Executing: {' '.join(cmd)}")

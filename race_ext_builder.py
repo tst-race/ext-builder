@@ -19,7 +19,7 @@ import logging
 import os
 import subprocess
 import sys
-from typing import Any, List, Mapping, Optional
+from typing import Any, List, Mapping, Optional, Tuple
 
 
 logger = logging.root
@@ -70,6 +70,10 @@ def get_arg_parser(
         help=argparse.SUPPRESS,
     )
     parser.add_argument(
+        "--install-prefix",
+        help=argparse.SUPPRESS,
+    )
+    parser.add_argument(
         "--log-file",
         help=argparse.SUPPRESS,
     )
@@ -87,7 +91,7 @@ def get_arg_parser(
     parser.add_argument(
         "--revision",
         default=revision,
-        help=f"Build revision",
+        help="Build revision",
         type=int,
     )
     parser.add_argument(
@@ -125,6 +129,13 @@ def normalize_args(args: argparse.Namespace) -> argparse.Namespace:
         args.build_dir = f"{cache_dir}/build"
     if not args.install_dir:
         args.install_dir = f"{cache_dir}/install"
+    if not args.install_prefix:
+        if args.target.startswith("linux"):
+            args.install_prefix = "/usr/local"
+        elif args.target == TARGET_ANDROID_x86_64:
+            args.install_prefix = "/android/x86_64"
+        elif args.target == TARGET_ANDROID_arm64_v8a:
+            args.install_prefix = "/android/arm64-v8a"
     if not args.log_file:
         args.log_file = f"/build/cache/{args.name}-{args.version}-{args.revision}-{args.target}.log"
     if not args.pkg_file:
@@ -137,6 +148,7 @@ def make_dirs(args: argparse.Namespace):
     os.makedirs(args.source_dir, exist_ok=True)
     os.makedirs(args.build_dir, exist_ok=True)
     os.makedirs(args.install_dir, exist_ok=True)
+    os.makedirs(args.install_prefix, exist_ok=True)
 
 
 class ConsoleFormatter(logging.Formatter):
@@ -182,8 +194,34 @@ def setup_logger(args: argparse.Namespace):
 
 def install_packages(args: argparse.Namespace, packages: List[str]):
     """Install packages via apt"""
+    logger.info(f"Installing {', '.join(packages)} from apt")
     execute(args, ["apt-get", "update", "-y"])
     execute(args, ["apt-get", "install", "-y"] + packages)
+
+
+def install_ext(args: argparse.Namespace, packages: List[Tuple[str, str]]):
+    """Install external dependencies"""
+    logger.info("Installing external dependencies from github")
+    for (name, version) in packages:
+        logger.info(f"Installing {name}-{version}")
+        local_filepath = f"/build/cache/{name}-{version}-{args.target}.tar.gz"
+        if not os.path.exists(local_filepath):
+            remote_url = f"https://github.com/tst-race/ext-{name}/releases/download/{version}/{name}-{version}-{args.target}.tar.gz"
+            logger.info(f"Fetching {remote_url} to {local_filepath}")
+            execute(args, [
+                "wget",
+                f"--output-document={local_filepath}",
+                remote_url,
+            ])
+        else:
+            logger.debug(f"Using cached {local_filepath}")
+
+        execute(args, [
+            "tar",
+            "--extract",
+            f"--file={local_filepath}",
+            f"--directory={args.install_prefix}",
+        ])
 
 
 def fetch_source(args: argparse.Namespace, source: Optional[str], extract: Optional[str]):
@@ -246,6 +284,11 @@ def create_standard_envvars(args: argparse.Namespace) -> Mapping[str, str]:
             "RANLIB": "aarch64-linux-android-ranlib",
             "STRIP": "aarch64-linux-android-strip",
         })
+    if args.target.startswith("android"):
+        toolchain_dir = f"{os.environ['ANDROID_NDK']}/toolchains/llvm/prebuilt/linux-x86_64/bin"
+        if os.path.exists(toolchain_dir):
+            env["PATH"] = f"{toolchain_dir}:{os.environ['PATH']}"
+    logger.debug(f"Using standard env vars: {env}")
     return env
 
 

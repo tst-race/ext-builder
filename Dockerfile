@@ -80,8 +80,10 @@ RUN case ${TARGETPLATFORM} in \
 COPY docker-image/${TARGETPLATFORM}/cross-compile-sources.list /etc/apt/sources.list.d/cross-compile-sources.list
 
 ENV ANDROID_NDK=/opt/android/ndk/default \
+    MIN_SDK_VERSION=29 \
     CC=clang \
     CXX=clang++ \
     PATH=${PATH}:/opt/android/cmdline-tools/tools/bin
 
+COPY docker-image/android-*.toolchain.cmake /opt/android/ndk/default/
 COPY race_ext_builder.py /usr/lib/python3.8/

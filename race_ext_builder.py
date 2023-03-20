@@ -314,6 +314,15 @@ def copy(args: argparse.Namespace, src: str, dest: str):
     execute(args, cmd)
 
 
+def find_and_replace(args: argparse.Namespace, root_dir: str, file_pattern: str, regex: str, replacement: str):
+    """Perform a find and replace"""
+    execute(args, [
+        "bash",
+        "-c",
+        f"find {root_dir} -type f -name '{file_pattern}' -print0 | xargs -0 sed -i \"s/{regex}/{replacement}/g\"",
+    ])
+
+
 def create_package(args: argparse.Namespace):
     """Create tarball package"""
     logger.info(f"Packaging {args.install_dir} into {args.pkg_file}")

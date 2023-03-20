@@ -323,7 +323,7 @@ def find_and_replace(args: argparse.Namespace, root_dir: str, file_pattern: str,
     ])
 
 
-def create_package(args: argparse.Namespace):
+def create_package(args: argparse.Namespace, subdir: Optional[str] = ""):
     """Create tarball package"""
     logger.info(f"Packaging {args.install_dir} into {args.pkg_file}")
     execute(args, [
@@ -331,6 +331,6 @@ def create_package(args: argparse.Namespace):
         "--create",
         f"--file={args.pkg_file}",
         "--gzip",
-        f"--directory={args.install_dir}",
+        f"--directory={args.install_dir}{subdir}",
         ".",
     ])

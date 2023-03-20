@@ -19,7 +19,7 @@ import logging
 import os
 import subprocess
 import sys
-from typing import Any, List, Mapping, Optional, Tuple
+from typing import Any, List, Mapping, Optional, Tuple, Union
 
 
 logger = logging.root
@@ -192,11 +192,37 @@ def setup_logger(args: argparse.Namespace):
     logging.root.addHandler(console_handler)
 
 
-def install_packages(args: argparse.Namespace, packages: List[str]):
-    """Install packages via apt"""
-    logger.info(f"Installing {', '.join(packages)} from apt")
+def install_packages(args: argparse.Namespace, packages: List[Union[str, Tuple[str, str, Optional[bool]]]]):
+    """
+    Install packages via apt
+
+    Package list is a list of either strings, or tuple of package name, version,
+    and whether the package is target-architecture dependent. For example:
+    ```
+    install_packages(args, [
+        "versionlesspkg",
+        "versionpinnedpkg=a.b.c",
+        ("versionlesspkg"),
+        ("versionlesspkg", "a.b.c"),
+        ("archspecificpkg", None, True),
+        ("archspecificversionpinnedpkg", "a.b.c", True),
+    ])
+    ```
+    """
+    arch = ":arm64" if "arm" in args.target else ":amd64"
+    pkgs = []
+    for package in packages:
+        if type(package) is str:
+            pkgs.append(package)
+        elif type(package) is tuple:
+            pkg_name = package[0]
+            pkg_ver = f"={package[1]}" if len(package) > 1 else ""
+            pkg_arch = arch if len(package) > 2 and package[2] else ""
+            pkgs.append(f"{pkg_name}{pkg_arch}{pkg_ver}")
+
+    logger.info(f"Installing {', '.join(pkgs)} from apt")
     execute(args, ["apt-get", "update", "-y"])
-    execute(args, ["apt-get", "install", "-y"] + packages)
+    execute(args, ["apt-get", "install", "-y"] + pkgs)
 
 
 def install_ext(args: argparse.Namespace, packages: List[Tuple[str, str]]):

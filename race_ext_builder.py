@@ -292,15 +292,25 @@ def create_standard_envvars(args: argparse.Namespace) -> Mapping[str, str]:
         })
     elif args.target == TARGET_ANDROID_x86_64:
         env.update({
+            "AR": "llvm-ar",
             "AS": "x86_64-linux-android-as",
             "CC": "x86_64-linux-android29-clang",
             "CXX": "x86_64-linux-android29-clang++",
+            "LD": "llvm-ld",
+            "RANLIB": "llvm-ranlib",
+            "READELF": "llvm-readelf",
+            "STRIP": "llvm-strip",
         })
     elif args.target == TARGET_ANDROID_arm64_v8a:
         env.update({
+            "AR": "llvm-ar",
             "AS": "aarch64-linux-android-as",
             "CC": "aarch64-linux-android29-clang",
             "CXX": "aarch64-linux-android29-clang++",
+            "LD": "llvm-ld",
+            "RANLIB": "llvm-ranlib",
+            "READELF": "llvm-readelf",
+            "STRIP": "llvm-strip",
         })
     if args.target.startswith("android"):
         toolchain_dir = f"{os.environ['ANDROID_NDK']}/toolchains/llvm/prebuilt/linux-x86_64/bin"

@@ -68,7 +68,7 @@ def get_cli_arguments():
     )
     parser.add_argument(
         "--image",
-        default="ext-builder", # TODO use ghcr.io image
+        default="ghcr.io/tst-race/ext-builder",
         help="Docker image to use for building the external project",
         type=str,
     )

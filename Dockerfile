@@ -79,6 +79,18 @@ RUN case ${TARGETPLATFORM} in \
     sed -i -e "s/deb http/deb [arch=$THIS_ARCH] http/" /etc/apt/sources.list
 COPY docker-image/${TARGETPLATFORM}/cross-compile-sources.list /etc/apt/sources.list.d/cross-compile-sources.list
 
+ARG ANDROID_TOOLS_VERSION=6609375
+# RUN mkdir -p /opt/android/cmdline-tools && \
+#     cd /opt/android/cmdline-tools && \
+#     wget https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_TOOLS_VERSION}_latest.zip && \
+#     unzip commandlinetools-*.zip && \
+#     rm commandlinetools-*.zip
+    
+ARG ANDROID_NDK_VERSION=21.4.7075529
+RUN yes | /opt/android/cmdline-tools/tools/bin/sdkmanager --licenses && \
+    /opt/android/cmdline-tools/tools/bin/sdkmanager --install "ndk;${ANDROID_NDK_VERSION}" && \
+    ln -s /opt/android/ndk/${ANDROID_NDK_VERSION} /opt/android/ndk/${ANDROID_NDK_VERSION}
+
 ENV ANDROID_NDK=/opt/android/ndk/default \
     MIN_SDK_VERSION=29 \
     CC=clang \

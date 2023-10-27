@@ -128,7 +128,7 @@ def normalize_args(args: argparse.Namespace) -> argparse.Namespace:
     if not args.build_dir:
         args.build_dir = f"{cache_dir}/build"
     if not args.install_dir:
-        args.install_dir = f"{cache_dir}/install"
+        args.install_dir = f"{cache_dir}/install/"
     if not args.install_prefix:
         if args.target.startswith("linux"):
             args.install_prefix = "/usr/local"
@@ -325,12 +325,13 @@ def execute(args: argparse.Namespace, cmd: List[str], cwd: Optional[str] = None,
     # Normalize command array
     cmd = [str(c) for c in cmd]
     # If env vars were provided, add them to execution environment
-    cmd_env = None
+    # cmd_env = None
+    # if env:
+    cmd_env = {k: v for (k,v) in os.environ.items()}
     if env:
-        cmd_env = {k: v for (k,v) in os.environ.items()}
         cmd_env.update(env)
 
-    logger.debug(f"Executing: {' '.join(cmd)}")
+    logger.debug(f"Executing: {' '.join(cmd)} with Env: {' '.join([':'.join([k,v]) for k,v in (cmd_env.items())])}")
     if not args.dry_run:
         proc = subprocess.Popen(cmd, cwd=cwd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, env=cmd_env, shell=False, universal_newlines=True)
         for line in proc.stdout:
@@ -361,7 +362,7 @@ def find_and_replace(args: argparse.Namespace, root_dir: str, file_pattern: str,
 
 def create_package(args: argparse.Namespace, subdir: Optional[str] = ""):
     """Create tarball package"""
-    logger.info(f"Packaging {args.install_dir} into {args.pkg_file}")
+    logger.info(f"Packaging {args.install_dir}{subdir} into {args.pkg_file}")
     execute(args, [
         "tar",
         "--create",

@@ -32,7 +32,7 @@ RUN mkdir -p /opt/android/cmdline-tools && \
     wget https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_TOOLS_VERSION}_latest.zip && \
     unzip commandlinetools-*.zip && \
     rm commandlinetools-*.zip
-ARG ANDROID_NDK_VERSION=23.0.7599858
+ARG ANDROID_NDK_VERSION=23.2.8568313
 RUN yes | /opt/android/cmdline-tools/tools/bin/sdkmanager --licenses && \
     /opt/android/cmdline-tools/tools/bin/sdkmanager --install "ndk;${ANDROID_NDK_VERSION}" && \
     ln -s /opt/android/ndk/${ANDROID_NDK_VERSION} /opt/android/ndk/default

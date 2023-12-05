@@ -216,7 +216,7 @@ def install_packages(args: argparse.Namespace, packages: List[Union[str, Tuple[s
             pkgs.append(package)
         elif type(package) is tuple:
             pkg_name = package[0]
-            pkg_ver = f"={package[1]}" if len(package) > 1 else ""
+            pkg_ver = f"={package[1]}" if len(package) > 1 and package[1] is not None else ""
             pkg_arch = arch if len(package) > 2 and package[2] else ""
             pkgs.append(f"{pkg_name}{pkg_arch}{pkg_ver}")
 
